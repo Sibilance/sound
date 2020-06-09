@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Sound</title>
+	<style>
+	html, body {
+		width: 100%;
+		height: 100%;
+		margin: 0;
+		overflow: hidden;
+	}
+	#power {
+		left: 50%;
+		top: 50%;
+		position: absolute;
+		width: 20px;
+		height: 20px;
+	}
+	#spectrograph {
+		width: 95%;
+		left: 2.5%;
+		top: 70%;
+		position: absolute;
+	}
+	.spectrograph-dot {
+		width: 10px;
+		height: 10px;
+	}
+	</style>
+  </head>
+  <body>
+	<button id="start">Start</button>
+	<div id="power"></div>
+	<div id="spectrograph"></div>
+
+	<script src="shapes.js"></script>
+	<script src="spectrograph.js"></script>
+	<script src="main.js"></script>
+  </body>
+</html>
