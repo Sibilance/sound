@@ -12,6 +12,7 @@ class AudioProcessor {
 	}
 	
 	constructor(sourceStream) {
+		this._audioContext = new AudioContext();
 		this._handlers = {
 			data: []
 		};
@@ -19,18 +20,40 @@ class AudioProcessor {
 	}
 	
 	async start(sourceStream) {
-		let audioContext = new AudioContext();
-		await audioContext.resume();
-		let sourceNode = audioContext.createMediaStreamSource(sourceStream);
+		this._sourceStream = sourceStream;
 		
-		await audioContext.audioWorklet.addModule('audio_worklet.js');
+		await this._audioContext.audioWorklet.addModule('audio_worklet.js');
+		this._processorNode = new AudioWorkletNode(this._audioContext, "my-audio-processor");
+		this._processorNode.port.onmessage = this._onMessage.bind(this);
 
-		let processorNode = new AudioWorkletNode(audioContext, "my-audio-processor");
-		sourceNode.connect(processorNode);
-		// If it isn't connected to a destination, the worklet is not executed.
-		processorNode.connect(audioContext.destination);
-		
-		processorNode.port.onmessage = this._onMessage.bind(this);
+		this._sourceNode = this._audioContext.createMediaStreamSource(sourceStream);
+		await this.resume();
+	}
+	
+	async suspend() {
+		this._sourceNode.disconnect();
+		await this._audioContext.suspend();
+	}
+	
+	async resume() {
+		this._sourceNode.connect(this._processorNode).connect(this._audioContext.destination);
+		await this._audioContext.resume();
+	}
+	
+	async close() {
+		await this._audioContext.close();
+	}
+	
+	get suspended() {
+		return this._audioContext.state === 'suspended';
+	}
+	
+	get running() {
+		return this._audioContext.state === 'running';
+	}
+	
+	get closed() {
+		return this._audioContext.state === 'closed';
 	}
 	
 	on(eventName, handler) {
@@ -51,19 +74,33 @@ class AudioProcessor {
 
 let power = new Circle(document.querySelector('#power'));
 let spectrograph = new Spectrograph(document.querySelector('#spectrograph'), 128);
+let audioProcessor;
 
 
 document.querySelector("#start").onclick = async function (event) {
 	event.preventDefault();
-	this.parentElement.removeChild(this);
+	this.style.display = 'none';
+
+	if (!audioProcessor) {
+		audioProcessor = await AudioProcessor.fromMic();
+		
+		audioProcessor.on("data", event => {
+			power.setScale(event.rootMeanSquare * 1000);
+			spectrograph.render(event.spectrograph, 100);
+			// throttle_log('data', event);
+		});
+	}
 	
-	let audioProcessor = await AudioProcessor.fromMic();
+	await audioProcessor.resume();
+	document.querySelector("#pause").style.display = 'block';
+};
+
+document.querySelector('#pause').onclick = async function (event) {
+	event.preventDefault();
+	this.style.display = 'none';
 	
-	audioProcessor.on("data", event => {
-		power.setScale(event.rootMeanSquare * 1000);
-		spectrograph.render(event.spectrograph, 100);
-		throttle_log('data', event);
-	});
+	await audioProcessor.suspend();
+	document.querySelector("#start").style.display = 'block';
 };
 
 
