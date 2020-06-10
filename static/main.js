@@ -73,7 +73,7 @@ class AudioProcessor {
 
 
 let power = new Circle(document.querySelector('#power'));
-let spectrograph = new Spectrograph(document.querySelector('#spectrograph'), 128);
+let spectrograph = new Spectrograph(document.querySelector('#spectrograph'), 32 * 10);
 let audioProcessor;
 
 
@@ -87,7 +87,6 @@ document.querySelector("#start").onclick = async function (event) {
 		audioProcessor.on("data", event => {
 			power.setScale(event.rootMeanSquare * 1000);
 			spectrograph.render(event.spectrograph, 100);
-			// throttle_log('data', event);
 		});
 	}
 	

@@ -1,7 +1,6 @@
 class Circle {
 	constructor(element) {
 		this.element = element;
-		element.style.backgroundColor = '#000';
 		element.style.borderRadius = '50%';
 		element.style.display = 'inline-block';
 		this.setScale(1);
